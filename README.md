@@ -1,6 +1,4 @@
-# AWS CLI: The Investor Audit Report
-
-The investors want an inventory of the AWS account by tomorrow: who is in it, what runs, which buckets are exposed, who has no MFA. Click through 40 screens, or write one script. Learn the CLI by building the audit tool.
+<p align="center"><img src="assets/banner.svg" alt="AWS CLI: The Investor Audit Report" width="100%"></p>
 
 | | |
 |-|-|
@@ -17,9 +15,10 @@ The investors want an inventory of the AWS account by tomorrow: who is in it, wh
 5. Commit and push. Open the **Actions** tab of your fork (click *I understand my workflows, go ahead and enable them* the first time). The **Lab check** shows what is still missing.
 6. When the check is green, **submit the URL of your fork** in the course platform.
 
+> [!NOTE]
 > The check only looks at your answers and any files the lab asks you to commit. Your instructor reads your work and may ask you to explain any line.
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## The situation
 
@@ -29,6 +28,7 @@ Tuesday, 16:00. The investors' due-diligence team sends a list of questions abou
 
 You could open forty console pages and take screenshots. You could also write a script that answers all four questions in two seconds, today, and next quarter, and for the next company you work at. That script is the real deliverable of this lab, and writing it is how you learn the AWS CLI.
 
+> [!IMPORTANT]
 > **Your mission**
 > - Install and configure the AWS CLI v2 with a **named profile**
 > - Learn the CLI's output formats, `--query` (JMESPath), pagination and `--dry-run`
@@ -38,7 +38,7 @@ You could open forty console pages and take screenshots. You could also write a 
 
 **Time:** 75-90 min | **Cost:** free (read-only calls) | **You need:** an AWS account with the admin user from the IAM lab, AWS CLI v2, Python 3. The tests use a **practice mode**, so you can finish the scripting part even without the account.
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 0 - Set the scene
 
@@ -50,7 +50,7 @@ aws --version
 
 You will also need an access key for a **practice** IAM user with administrator access. In the console create the user `cli-admin` (IAM -> Users), attach `AdministratorAccess`, and under **Security credentials** create an access key for the "Command Line Interface" use case. You will delete this key at the end of the lab.
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 1 - Recon: who am I?
 
@@ -63,11 +63,13 @@ aws sts get-caller-identity --profile clipstr
 2. What does `get-caller-identity` return? Compare the `Arn` with the user in the console.
 3. Run `aws sts get-caller-identity` **without** the profile. What happens? Then run `export AWS_PROFILE=clipstr` and again. Finally try with `AWS_ACCESS_KEY_ID=bad`. Which credentials won each time?
 
+> [!NOTE]
 > **Predict** The CLI looks for credentials in a fixed order: command-line flags, environment variables, config files, then container or instance roles. In which order do you think? Check the documentation page "Configuration and credential file settings" and compare.
 
+> [!NOTE]
 > **Think** A long-lived access key on your laptop is a secret that does not expire. What happens if the laptop is stolen, or the key is pasted into a public repository? Name two alternatives you could use instead (hint: IAM Identity Center / `aws sso login`, and roles with `aws sts assume-role`).
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 2 - Learn the CLI's language
 
@@ -87,7 +89,7 @@ aws ec2 run-instances --dry-run --image-id "$AMI" --instance-type t3.micro --reg
 3. What does `--dry-run` do on the `run-instances` call above? The first line fetches the ID of the latest Amazon Linux AMI from a public SSM parameter (a handy trick). Read the error carefully: it is called `DryRunOperation`. Does it mean the call would have worked or failed? Now repeat the call with a made-up ID like `ami-12345678`: which error do you get instead, and what does that teach you about the order in which AWS checks things?
 4. A command like `aws s3api list-objects-v2 --bucket x` returns at most 1000 items. How does the CLI handle more (pagination)? Look for `--max-items`, `--page-size` and `--no-paginate`.
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 3 - Build audit.sh
 
@@ -118,6 +120,7 @@ Rules:
 
 Build it one fact at a time and run it often. In an account with many Regions and buckets the real run can take a minute or two, because it makes one call per Region, bucket and user. That is normal; the Level up section shows how to speed it up.
 
+> [!WARNING]
 > **Break it** Run it against a bucket you create in your own account **without** a Block Public Access configuration (name it `clipstr-audit-test-<your initials>`, S3 console -> bucket -> Permissions -> untick, only while testing, and delete it afterwards), or read what `set -e` does when `get-public-access-block` returns exit code 254. What does your script do the first time it meets that error? Make it survive, and write a sentence on why "no configuration" is itself a finding.
 
 ### Practice mode (no AWS needed)
@@ -130,21 +133,22 @@ PATH="$PWD/tests/bin:$PATH" ./audit.sh
 
 It needs `python3-jmespath` (`sudo apt install python3-jmespath`). The expected output for the first fake account is in `tests/expected-account1.txt`.
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 4 - The real thing
 
 Run `./audit.sh clipstr` against your own account. Compare the output with what you know. Anything you did not expect? An old bucket, a region with a forgotten instance, a user without MFA (hello, `sam-intern`)? Keep the output for your submission.
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 5 - The same question in Python (boto3)
 
 Write `whoami.py` with `boto3`: create an `sts` client, call `get_caller_identity()` and print the account and ARN. Install with `pip install boto3` (or `sudo apt install python3-boto3`). Run it with `AWS_PROFILE=clipstr python3 whoami.py`.
 
+> [!NOTE]
 > **Think** boto3 found your credentials without you writing them in the script. Where did it look? What would you have to change to run the same script in GitHub Actions or on an EC2 instance, with no access keys at all?
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 6 - Prove it, then close the door
 
@@ -154,7 +158,7 @@ Write `whoami.py` with `boto3`: create an `sts` client, call `get_caller_identit
 
 Finally, **deactivate and delete the access key** you created for `cli-admin` (IAM -> Users -> cli-admin -> Security credentials), then delete the user if you do not need it. A key that was only needed for a lab should not outlive the lab.
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Level up (optional)
 
