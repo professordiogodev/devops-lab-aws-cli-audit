@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+"""A tiny fake of the AWS CLI for practice mode. Understands only what the audit needs.
+Set FAKE_AWS_VARIANT=2 for a second, different "account". Supports --query (JMESPath) and --output json|text."""
+import json, os, sys
+try:
+    import jmespath
+except ImportError:
+    sys.stderr.write("fake aws: python module 'jmespath' is missing (sudo apt install python3-jmespath)\n"); sys.exit(1)
+
+# global options may come first, like the real CLI
+if "--profile" in sys.argv:
+    i = sys.argv.index("--profile"); del sys.argv[i:i + 2]
+
+V = os.environ.get("FAKE_AWS_VARIANT", "1")
+ACC = {"1": "111122223333", "2": "999988887777"}[V]
+REGIONS = ["eu-west-1", "eu-central-1", "us-east-1", "us-west-2", "ap-southeast-1", "sa-east-1"] if V == "1" else ["eu-west-1", "us-east-1", "ap-southeast-2"]
+INST = {"1": {"eu-west-1": [("i-001", "running"), ("i-002", "running"), ("i-003", "stopped")], "us-east-1": [("i-101", "running")]},
+        "2": {"eu-west-1": [("i-201", "running")] * 5, "ap-southeast-2": [("i-301", "stopped")]}}[V]
+BUCKETS = {"1": {"clipstr-uploads": "all", "clipstr-finance": "all", "clipstr-assets": None, "old-demo-site": "partial"},
+           "2": {"acme-data": "all", "acme-logs": "all"}}[V]
+USERS = {"1": {"maya": True, "priya": False, "sam-intern": False, "tomas": True}, "2": {"root-admin": True, "ci": True}}[V]
+
+def arg(name, default=None):
+    a = sys.argv
+    return a[a.index(name) + 1] if name in a else default
+svc, op = (sys.argv[1:3] + ["", ""])[:2]
+region = arg("--region", REGIONS[0]); out = arg("--output", "json"); query = arg("--query")
+def fail(code, msg): sys.stderr.write(f"\nAn error occurred ({code}) when calling the {op} operation: {msg}\n"); sys.exit(254)
+
+if (svc, op) == ("sts", "get-caller-identity"):
+    data = {"UserId": "AIDAFAKE", "Account": ACC, "Arn": f"arn:aws:iam::{ACC}:user/cli-admin"}
+elif (svc, op) == ("ec2", "describe-regions"):
+    data = {"Regions": [{"RegionName": r, "OptInStatus": "opt-in-not-required"} for r in REGIONS]}
+elif (svc, op) == ("ec2", "describe-instances"):
+    flt = " ".join(sys.argv)
+    items = INST.get(region, [])
+    if "instance-state-name" in flt and "running" in flt: items = [i for i in items if i[1] == "running"]
+    data = {"Reservations": [{"Instances": [{"InstanceId": i, "State": {"Name": s}} for i, s in items]}] if items else []}
+elif (svc, op) == ("s3api", "list-buckets"):
+    data = {"Buckets": [{"Name": n, "CreationDate": "2026-01-01T00:00:00+00:00"} for n in BUCKETS], "Owner": {"ID": "x"}}
+elif (svc, op) == ("s3api", "get-public-access-block"):
+    b = arg("--bucket"); st = BUCKETS.get(b, "x")
+    if b not in BUCKETS: fail("NoSuchBucket", "The specified bucket does not exist")
+    if st is None: fail("NoSuchPublicAccessBlockConfiguration", "The public access block configuration was not found")
+    on = st == "all"
+    data = {"PublicAccessBlockConfiguration": {"BlockPublicAcls": True, "IgnorePublicAcls": True, "BlockPublicPolicy": on, "RestrictPublicBuckets": on}}
+elif (svc, op) == ("iam", "list-users"):
+    data = {"Users": [{"UserName": u, "Arn": f"arn:aws:iam::{ACC}:user/{u}"} for u in USERS]}
+elif (svc, op) == ("iam", "list-mfa-devices"):
+    u = arg("--user-name"); data = {"MFADevices": [{"UserName": u, "SerialNumber": "arn:aws:iam::x:mfa/" + u}] if USERS.get(u) else []}
+else:
+    sys.stderr.write(f"fake aws: command not supported in practice mode: {svc} {op}\n"); sys.exit(252)
+
+if query: data = jmespath.search(query, data)
+if out == "text":
+    def flat(x):
+        if x is None: return ""
+        if isinstance(x, list): return "\t".join(flat(i) for i in x) if all(not isinstance(i, (list, dict)) for i in x) else "\n".join(flat(i) for i in x)
+        if isinstance(x, dict): return "\t".join(flat(v) for v in x.values())
+        return str(x)
+    print(flat(data))
+else:
+    print(json.dumps(data, indent=4))
