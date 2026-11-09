@@ -78,12 +78,13 @@ aws ec2 describe-regions --output table --profile clipstr
 aws ec2 describe-regions --output text --query 'Regions[].RegionName' --profile clipstr
 aws iam list-users --query 'Users[].[UserName,CreateDate]' --output table --profile clipstr
 aws s3api list-buckets --query 'Buckets[?starts_with(Name, `clipstr`)].Name' --profile clipstr
-aws ec2 run-instances --dry-run --image-id ami-12345678 --instance-type t3.micro --profile clipstr
+AMI=$(aws ssm get-parameter --name /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 --region eu-west-1 --query Parameter.Value --output text --profile clipstr)
+aws ec2 run-instances --dry-run --image-id "$AMI" --instance-type t3.micro --region eu-west-1 --profile clipstr
 ```
 
 1. What does `--query` do, and why is it better than piping JSON into `grep`? Write the JMESPath for "the names of all buckets whose name contains `finance`".
 2. Compare `--output json`, `table` and `text`. Which one would you feed into a shell `for` loop and why? Which one is dangerous when a value can contain spaces or tabs?
-3. What does `--dry-run` do on the `run-instances` call above? Read the error carefully: does it say "success" or "failure", and which one is the good news?
+3. What does `--dry-run` do on the `run-instances` call above? The first line fetches the ID of the latest Amazon Linux AMI from a public SSM parameter (a handy trick). Read the error carefully: it is called `DryRunOperation`. Does it mean the call would have worked or failed? Now repeat the call with a made-up ID like `ami-12345678`: which error do you get instead, and what does that teach you about the order in which AWS checks things?
 4. A command like `aws s3api list-objects-v2 --bucket x` returns at most 1000 items. How does the CLI handle more (pagination)? Look for `--max-items`, `--page-size` and `--no-paginate`.
 
 ---
@@ -115,7 +116,7 @@ Rules:
 - An optional argument is the profile name; without it, use the default credentials.
 - Start with `set -euo pipefail`. Use `--query` to select data; do not parse JSON with `grep` or `sed`.
 
-Build it one fact at a time and run it often.
+Build it one fact at a time and run it often. In an account with many Regions and buckets the real run can take a minute or two, because it makes one call per Region, bucket and user. That is normal; the Level up section shows how to speed it up.
 
 > **Break it** Run it against a bucket you create in your own account **without** a Block Public Access configuration (S3 console -> bucket -> Permissions -> untick, only while testing!), or read what `set -e` does when `get-public-access-block` returns exit code 254. What does your script do the first time it meets that error? Make it survive, and write a sentence on why "no configuration" is itself a finding.
 
@@ -157,6 +158,7 @@ Finally, **deactivate and delete the access key** you created for `cli-admin` (I
 
 ## Level up (optional)
 
+- **Speed.** Run the per-Region calls in parallel with `xargs -P 8` or background jobs and `wait`. How much faster is it, and what must you be careful about with the output order?
 - **JSON report.** Add `--json` to `audit.sh` and emit the report as a JSON object. Use `jq`.
 - **Multi-account.** Loop over several profiles and print one report per account.
 - **CloudShell.** Open AWS CloudShell from the console and run `audit.sh` there. Which credentials does it use, and why is no `aws configure` needed?
