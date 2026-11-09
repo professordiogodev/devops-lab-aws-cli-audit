@@ -14,10 +14,10 @@ no_buckets_with_prefix() { [ -z "$(aws s3api list-buckets --query "Buckets[?star
 no_budget() { ! aws budgets describe-budget --account-id "$ACCOUNT" --budget-name "$1" >/dev/null 2>&1; }
 
 check "IAM user cli-admin is deleted, or has no access keys" bash -c "! aws iam get-user --user-name cli-admin >/dev/null 2>&1 || [ -z \"\$(aws iam list-access-keys --user-name cli-admin --query 'AccessKeyMetadata[].AccessKeyId' --output text)\" ]"
-check "the profile 'clipstr' no longer works (its key was deleted)" bash -c "! aws sts get-caller-identity --profile clipstr >/dev/null 2>&1"
-check "the profile 'clipstr' is removed from ~/.aws/credentials" bash -c "! grep -qs '^\[clipstr\]' ~/.aws/credentials"
-check "the profile 'clipstr' is removed from ~/.aws/config" bash -c "! grep -qs '^\[profile clipstr\]' ~/.aws/config"
-check "no S3 bucket named clipstr-audit-test-* is left" no_buckets_with_prefix clipstr-audit-test-
+check "the profile 'clippy' no longer works (its key was deleted)" bash -c "! aws sts get-caller-identity --profile clippy >/dev/null 2>&1"
+check "the profile 'clippy' is removed from ~/.aws/credentials" bash -c "! grep -qs '^\[clippy\]' ~/.aws/credentials"
+check "the profile 'clippy' is removed from ~/.aws/config" bash -c "! grep -qs '^\[profile clippy\]' ~/.aws/config"
+check "no S3 bucket named clippy-audit-test-* is left" no_buckets_with_prefix clippy-audit-test-
 check "no access key id is exported in this shell" bash -c "[ -z \"\${AWS_ACCESS_KEY_ID:-}\" ] || [ \"\$AWS_ACCESS_KEY_ID\" = \"\$(aws configure get aws_access_key_id 2>/dev/null)\" ]"
 
 echo

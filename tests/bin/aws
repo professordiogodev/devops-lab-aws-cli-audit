@@ -16,7 +16,7 @@ ACC = {"1": "111122223333", "2": "999988887777"}[V]
 REGIONS = ["eu-west-1", "eu-central-1", "us-east-1", "us-west-2", "ap-southeast-1", "sa-east-1"] if V == "1" else ["eu-west-1", "us-east-1", "ap-southeast-2"]
 INST = {"1": {"eu-west-1": [("i-001", "running"), ("i-002", "running"), ("i-003", "stopped")], "us-east-1": [("i-101", "running")]},
         "2": {"eu-west-1": [("i-201", "running")] * 5, "ap-southeast-2": [("i-301", "stopped")]}}[V]
-BUCKETS = {"1": {"clipstr-uploads": "all", "clipstr-finance": "all", "clipstr-assets": None, "old-demo-site": "partial"},
+BUCKETS = {"1": {"clippy-uploads": "all", "clippy-finance": "all", "clippy-assets": None, "old-demo-site": "partial"},
            "2": {"acme-data": "all", "acme-logs": "all"}}[V]
 USERS = {"1": {"maya": True, "priya": False, "sam-intern": False, "tomas": True}, "2": {"root-admin": True, "ci": True}}[V]
 

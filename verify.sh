@@ -13,9 +13,9 @@ CALLER arn:aws:iam::111122223333:user/cli-admin
 REGIONS_ENABLED 6
 RUNNING_INSTANCES eu-west-1 2
 RUNNING_INSTANCES us-east-1 1
-BUCKET clipstr-assets BLOCK_PUBLIC_ACCESS no
-BUCKET clipstr-finance BLOCK_PUBLIC_ACCESS yes
-BUCKET clipstr-uploads BLOCK_PUBLIC_ACCESS yes
+BUCKET clippy-assets BLOCK_PUBLIC_ACCESS no
+BUCKET clippy-finance BLOCK_PUBLIC_ACCESS yes
+BUCKET clippy-uploads BLOCK_PUBLIC_ACCESS yes
 BUCKET old-demo-site BLOCK_PUBLIC_ACCESS no
 USERS_WITHOUT_MFA priya,sam-intern
 X
@@ -42,7 +42,7 @@ check "account 1: exit code 0"                                  test "$rc1" = 0
 check "account 1: the report is exactly right"                  test "$got1" = "$EXPECT1"
 got2=$(practice 2 ./audit.sh 2>&1); rc2=$?
 check "account 2 (different data): the report is exactly right" test "$rc2" = 0 -a "$got2" = "$EXPECT2"
-check "a bucket without public-access-block configuration is reported as 'no', not a crash" bash -c "grep -q 'clipstr-assets BLOCK_PUBLIC_ACCESS no' <<< \"\$1\"" _ "$got1"
+check "a bucket without public-access-block configuration is reported as 'no', not a crash" bash -c "grep -q 'clippy-assets BLOCK_PUBLIC_ACCESS no' <<< \"\$1\"" _ "$got1"
 check "a profile argument is accepted (./audit.sh myprofile)"    bash -c "PATH='$ROOT/tests/bin:'\$PATH FAKE_AWS_VARIANT=1 ./audit.sh myprofile >/dev/null 2>&1"
 
 if [ "$failn" -ne 0 ]; then

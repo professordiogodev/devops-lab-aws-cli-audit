@@ -2,7 +2,7 @@
 
 ## The situation
 
-Tuesday, 16:00. The investors' due-diligence team sends a list of questions about the AWS account that Clipstr runs on. They need the answers by tomorrow morning:
+Tuesday, 16:00. The investors' due-diligence team sends a list of questions about the AWS account that Clippy runs on. They need the answers by tomorrow morning:
 
 *"Who can log in? Is anyone without MFA? What is running, and where? Are any storage buckets exposed to the internet?"*
 
@@ -34,13 +34,13 @@ You will also need an access key for a **practice** IAM user with administrator 
 ## Part 1 - Recon: who am I?
 
 ```bash
-aws configure --profile clipstr
-aws sts get-caller-identity --profile clipstr
+aws configure --profile clippy
+aws sts get-caller-identity --profile clippy
 ```
 
 1. Open `~/.aws/credentials` and `~/.aws/config`. What goes in each file? Which of the two should never be shared?
 2. What does `get-caller-identity` return? Compare the `Arn` with the user in the console.
-3. Run `aws sts get-caller-identity` **without** the profile. What happens? Then run `export AWS_PROFILE=clipstr` and again. Finally try with `AWS_ACCESS_KEY_ID=bad`. Which credentials won each time?
+3. Run `aws sts get-caller-identity` **without** the profile. What happens? Then run `export AWS_PROFILE=clippy` and again. Finally try with `AWS_ACCESS_KEY_ID=bad`. Which credentials won each time?
 
 > **Predict** The CLI looks for credentials in a fixed order: command-line flags, environment variables, config files, then container or instance roles. In which order do you think? Check the documentation page "Configuration and credential file settings" and compare.
 
@@ -53,12 +53,12 @@ aws sts get-caller-identity --profile clipstr
 Try each, read the result, and change it:
 
 ```bash
-aws ec2 describe-regions --output table --profile clipstr
-aws ec2 describe-regions --output text --query 'Regions[].RegionName' --profile clipstr
-aws iam list-users --query 'Users[].[UserName,CreateDate]' --output table --profile clipstr
-aws s3api list-buckets --query 'Buckets[?starts_with(Name, `clipstr`)].Name' --profile clipstr
-AMI=$(aws ssm get-parameter --name /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 --region eu-west-1 --query Parameter.Value --output text --profile clipstr)
-aws ec2 run-instances --dry-run --image-id "$AMI" --instance-type t3.micro --region eu-west-1 --profile clipstr
+aws ec2 describe-regions --output table --profile clippy
+aws ec2 describe-regions --output text --query 'Regions[].RegionName' --profile clippy
+aws iam list-users --query 'Users[].[UserName,CreateDate]' --output table --profile clippy
+aws s3api list-buckets --query 'Buckets[?starts_with(Name, `clippy`)].Name' --profile clippy
+AMI=$(aws ssm get-parameter --name /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 --region eu-west-1 --query Parameter.Value --output text --profile clippy)
+aws ec2 run-instances --dry-run --image-id "$AMI" --instance-type t3.micro --region eu-west-1 --profile clippy
 ```
 
 1. What does `--query` do, and why is it better than piping JSON into `grep`? Write the JMESPath for "the names of all buckets whose name contains `finance`".
@@ -78,9 +78,9 @@ CALLER arn:aws:iam::111122223333:user/cli-admin
 REGIONS_ENABLED 6
 RUNNING_INSTANCES eu-west-1 2
 RUNNING_INSTANCES us-east-1 1
-BUCKET clipstr-assets BLOCK_PUBLIC_ACCESS no
-BUCKET clipstr-finance BLOCK_PUBLIC_ACCESS yes
-BUCKET clipstr-uploads BLOCK_PUBLIC_ACCESS yes
+BUCKET clippy-assets BLOCK_PUBLIC_ACCESS no
+BUCKET clippy-finance BLOCK_PUBLIC_ACCESS yes
+BUCKET clippy-uploads BLOCK_PUBLIC_ACCESS yes
 BUCKET old-demo-site BLOCK_PUBLIC_ACCESS no
 USERS_WITHOUT_MFA priya,sam-intern
 ```
@@ -97,7 +97,7 @@ Rules:
 
 Build it one fact at a time and run it often. In an account with many Regions and buckets the real run can take a minute or two, because it makes one call per Region, bucket and user. That is normal; the Level up section shows how to speed it up.
 
-> **Break it** Run it against a bucket you create in your own account **without** a Block Public Access configuration (name it `clipstr-audit-test-<your initials>`, S3 console -> bucket -> Permissions -> untick, only while testing, and delete it afterwards), or read what `set -e` does when `get-public-access-block` returns exit code 254. What does your script do the first time it meets that error? Make it survive, and write a sentence on why "no configuration" is itself a finding.
+> **Break it** Run it against a bucket you create in your own account **without** a Block Public Access configuration (name it `clippy-audit-test-<your initials>`, S3 console -> bucket -> Permissions -> untick, only while testing, and delete it afterwards), or read what `set -e` does when `get-public-access-block` returns exit code 254. What does your script do the first time it meets that error? Make it survive, and write a sentence on why "no configuration" is itself a finding.
 
 ### Practice mode (no AWS needed)
 
@@ -113,13 +113,13 @@ It needs `python3-jmespath` (`sudo apt install python3-jmespath`). The expected 
 
 ## Part 4 - The real thing
 
-Run `./audit.sh clipstr` against your own account. Compare the output with what you know. Anything you did not expect? An old bucket, a region with a forgotten instance, a user without MFA (hello, `sam-intern`)? Keep the output for your submission.
+Run `./audit.sh clippy` against your own account. Compare the output with what you know. Anything you did not expect? An old bucket, a region with a forgotten instance, a user without MFA (hello, `sam-intern`)? Keep the output for your submission.
 
 ---
 
 ## Part 5 - The same question in Python (boto3)
 
-Write `whoami.py` with `boto3`: create an `sts` client, call `get_caller_identity()` and print the account and ARN. Install with `pip install boto3` (or `sudo apt install python3-boto3`). Run it with `AWS_PROFILE=clipstr python3 whoami.py`.
+Write `whoami.py` with `boto3`: create an `sts` client, call `get_caller_identity()` and print the account and ARN. Install with `pip install boto3` (or `sudo apt install python3-boto3`). Run it with `AWS_PROFILE=clippy python3 whoami.py`.
 
 > **Think** boto3 found your credentials without you writing them in the script. Where did it look? What would you have to change to run the same script in GitHub Actions or on an EC2 instance, with no access keys at all?
 
@@ -149,8 +149,8 @@ Resources left behind cost money, keep doors open and pollute the next lab. Remo
 
 Do this **last**, after you have pasted your `verify` output into `SUBMISSION.md` (once you tear down, the lab can no longer be verified).
 
-1. Delete the access key of `cli-admin` in the console (IAM -> Users -> cli-admin -> Security credentials), then delete the user if you do not need it. If you created a test bucket, name it `clipstr-audit-test-<initials>` and delete it.
-2. Remove the `[clipstr]` profile from `~/.aws/credentials` and `[profile clipstr]` from `~/.aws/config`, and `unset AWS_PROFILE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY` in your shell.
+1. Delete the access key of `cli-admin` in the console (IAM -> Users -> cli-admin -> Security credentials), then delete the user if you do not need it. If you created a test bucket, name it `clippy-audit-test-<initials>` and delete it.
+2. Remove the `[clippy]` profile from `~/.aws/credentials` and `[profile clippy]` from `~/.aws/config`, and `unset AWS_PROFILE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY` in your shell.
 3. Run the check with your **normal admin** credentials (default profile, SSO or CloudShell), not with the profile you just deleted.
 
 Then run the proof:
