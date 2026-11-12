@@ -2,11 +2,16 @@
 
 ## The situation
 
-Tuesday, 16:00. The investors' due-diligence team sends a list of questions about the AWS account that Clippy runs on. They need the answers by tomorrow morning:
+```text
+INVESTOR DUE-DILIGENCE QUESTIONNAIRE - Clippy AWS account       Tuesday 16:00
+Due     : tomorrow morning
+Q1      : Who can log in?
+Q2      : Is anyone without MFA?
+Q3      : What is running, and where?
+Q4      : Are any storage buckets exposed to the internet?
+```
 
-*"Who can log in? Is anyone without MFA? What is running, and where? Are any storage buckets exposed to the internet?"*
-
-You could open forty console pages and take screenshots. You could also write a script that answers all four questions in two seconds, today, and next quarter, and for the next company you work at. That script is the real deliverable of this lab, and writing it is how you learn the AWS CLI.
+You could open forty console pages and take screenshots. You could also write a script that answers all four questions in two seconds, today, next quarter and at the next company you work at. That script is the real deliverable of this lab, and writing it is how you learn the AWS CLI.
 
 > **Your mission**
 > - Install and configure the AWS CLI v2 with a **named profile**
